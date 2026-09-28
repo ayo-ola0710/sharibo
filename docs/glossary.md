@@ -34,7 +34,7 @@ A value that binds a proof to a specific circle and round, so a proof generated 
 ### fee_bps / basis points
 
 Protocol fee charged on a successful claim, expressed in basis points (1 bp = 0.01%). `10_000` = 100% of the pot. `0` disables fees. Configured per circle at creation; settled to `fee_recipient` when the pot pays out.  
-→ [`docs/adr/003-protocol-fees.md`](adr/003-protocol-fees.md)
+→ [`docs/adr/008-protocol-fees.md`](adr/008-protocol-fees.md)
 
 ### Groth16
 
@@ -49,7 +49,7 @@ Two random numbers that together form a member's private identity. The nullifier
 ### LeanIMT
 
 Lean Incremental Merkle Tree — the off-chain Merkle tree shape Sharibo uses for member commitments. Depth can grow with membership without rewriting historical leaves; the on-chain contract only ever stores the current root.  
-→ [`docs/adr/003-leanimt-dynamic-depth-merkle-tree.md`](adr/003-leanimt-dynamic-depth-merkle-tree.md)
+→ [`docs/adr/007-leanimt-dynamic-depth-merkle-tree.md`](adr/007-leanimt-dynamic-depth-merkle-tree.md)
 
 ### Merkle root / Merkle tree
 
@@ -114,7 +114,7 @@ The set of numbers used for all hash outputs and field arithmetic in Sharibo —
 ### schema_version
 
 Integer stamped on persisted circle / protocol state so storage layouts can migrate safely across contract upgrades without silently misreading old bytes.  
-→ [`docs/adr/003-storage-migration.md`](adr/003-storage-migration.md)
+→ [`docs/adr/009-storage-migration.md`](adr/009-storage-migration.md)
 
 ### Trusted setup / toxic waste
 

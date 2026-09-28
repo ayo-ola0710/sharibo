@@ -63,6 +63,25 @@ describe("documentation structure", () => {
     assert.deepEqual(missing, [], `broken breakdown anchors: ${missing.join(", ")}`);
   });
 
+  it("contracts/README.md local links all resolve", () => {
+    const readmeFile = join(ROOT, "contracts/README.md");
+    const readme = readFileSync(readmeFile, "utf8");
+    const linkRegex = /\]\(([^)http#]+)(#[^)]+)?\)/g;
+    const offenders = [];
+    let match;
+    while ((match = linkRegex.exec(readme)) !== null) {
+      const linkPath = match[1];
+      if (!linkPath || linkPath === "") continue;
+      const fullPath = join(dirname(readmeFile), linkPath);
+      try {
+        statSync(fullPath);
+      } catch (e) {
+        offenders.push(linkPath);
+      }
+    }
+    assert.deepEqual(offenders, [], `broken links in contracts/README.md: ${offenders.join(", ")}`);
+  });
+
   it("no markdown states the stale 3-signal public-input list", () => {
     const offenders = [];
     for (const file of walkMarkdown(ROOT)) {
@@ -82,5 +101,28 @@ describe("documentation structure", () => {
   it("manifest lists four signals including recipientHash", () => {
     assert.equal(MANIFEST.order.length, 4);
     assert.equal(MANIFEST.order[3], "recipientHash");
+  });
+
+  it("every markdown file in docs/ and root is indexed in docs/index.md", () => {
+    const indexContent = readFileSync(join(ROOT, "docs/index.md"), "utf8");
+    const offenders = [];
+    
+    for (const file of walkMarkdown(join(ROOT, "docs"))) {
+      const relPath = relative(join(ROOT, "docs"), file);
+      if (relPath === "index.md") continue;
+      if (!indexContent.includes(relPath)) {
+        offenders.push(`docs/${relPath}`);
+      }
+    }
+    
+    for (const name of readdirSync(ROOT)) {
+      if (name.endsWith(".md")) {
+        if (!indexContent.includes(name)) {
+          offenders.push(name);
+        }
+      }
+    }
+    
+    assert.deepEqual(offenders, [], `unindexed markdown files: ${offenders.join(", ")}`);
   });
 });

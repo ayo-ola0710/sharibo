@@ -6,10 +6,22 @@ is a **manual** Vercel deployment of `app/`.
 
 ## Why it is manual
 
-Both [`vercel.json`](../vercel.json) and [`app/vercel.json`](../app/vercel.json)
-set `"git.deploymentEnabled": false`. Pushes to GitHub do **not** trigger a
-deploy. Environment variables are baked into the static build from `app/.env`
-at build time (Vite `VITE_*`), not configured as Vercel project env vars.
+The root [`vercel.json`](../vercel.json) sets `"git.deploymentEnabled": false` to disable automatic Vercel deployments on push. 
+
+Because `app/` requires circuit artifacts (`membership.wasm`, `membership_final.zkey`, `verification_key.json`) to be present in `app/public/circuits/`, and the Vercel build image does not have the `circom` toolchain installed to build them, we cannot rely on Vercel's standard build infrastructure. 
+
+Instead, the `dist/` directory is built locally (where `circom` and `snarkjs` are available) and the compiled static assets are manually uploaded to Vercel via the CLI. Environment variables are baked into the static build from `app/.env` at build time (Vite `VITE_*`), not configured as Vercel project env vars.
+
+## Required Environment Variables
+
+When building locally, Vite requires the following environment variables (from `app/.env`).
+
+| Variable | Description | Example Value |
+|---|---|---|
+| `VITE_STELLAR_RPC_URL` | Soroban RPC endpoint | `https://soroban-testnet.stellar.org` |
+| `VITE_STELLAR_NETWORK_PASSPHRASE` | Network passphrase | `Test SDF Network ; September 2015` |
+| `VITE_SHARIBO_CONTRACT_ID` | Deployed Sharibo contract ID | `CB64IZIBBSPUY63UMIVACKWDKRFNH6WJ2EPAOLM7QR4ZI6IJOT4N2LCF` |
+| `VITE_TEST_TOKEN_CONTRACT_ID` | Test asset (e.g., native XLM) ID | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` |
 
 ## Prerequisites
 

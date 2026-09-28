@@ -13,7 +13,7 @@ each covers and where to find it.
 | [`NOTES.md`](../NOTES.md) | **Historical** append-only build log — not authoritative for current invariants |
 | [`full_product_breakdown.md`](../full_product_breakdown.md) | Complete technical deep-dive: every system layer, engineering decisions, security properties, honest limitations |
 | [`CODE_OF_CONDUCT.md`](../CODE_OF_CONDUCT.md) | Contributor code of conduct |
-| [`SECURITY.md`](../SECURITY.md) | Security policy and responsible disclosure |
+| [`CONTRIBUTING.md`](../CONTRIBUTING.md) | Development workflow, test suites, and dependency audit runbook |
 | [`LICENSE`](../LICENSE) | Project license |
 
 ## Hackathon-era artifacts (`docs/hackathon/` — point-in-time archive, not maintained)
@@ -28,21 +28,22 @@ an archive is allowed to contain stale claims.
 | [`hackathon/dorahacks_submission.md`](hackathon/dorahacks_submission.md) | DoraHacks submission form text (project description, evidence, honest scope) |
 | [`hackathon/VERIFY.md`](hackathon/VERIFY.md) | Historical one-minute judge verification guide (stale testnet IDs; see README for current evidence) |
 
+## Security
+
+| File | Description |
+|---|---|
+| [`SECURITY.md`](../SECURITY.md) | Security policy and responsible disclosure |
+| [`threat-model.md`](threat-model.md) | Assets, adversaries, and which code enforces each property |
+| [`poseidon-provenance.md`](poseidon-provenance.md) | Poseidon-over-BLS12-381 constants: packages, verification status, risks |
+
 ## Architecture
 
 | File | Description |
 |---|---|
 | [`architecture.md`](architecture.md) | Detailed version of the README's repository structure: directory ownership, toolchains, and end-to-end data flow |
 | [`wire-format.md`](wire-format.md) | Authoritative public signal order and Groth16 byte encodings across circuit, contract, and client |
-| [`canary.md`](canary.md) | Scheduling `scripts/e2e.ts` on testnet; foreground-run constraint |
 | [`ceremony.md`](ceremony.md) | **Planned** multi-party trusted-setup runbook (#546) — not executed |
-| [`poseidon-provenance.md`](poseidon-provenance.md) | Poseidon-over-BLS12-381 constants: packages, verification status, risks |
-| [`roadmap.md`](roadmap.md) | Mainnet readiness checklist (no target dates) |
-| [`threat-model.md`](threat-model.md) | Assets, adversaries, and which code enforces each property |
-| [`troubleshooting.md`](troubleshooting.md) | Common setup and proof-verification failures |
 | [`observability.md`](observability.md) | SDK `SdkEvent` taxonomy (`onEvent`) for retries, proofs, artifacts, transactions |
-| [`deployment.md`](deployment.md) | How the live browser demo is built and manually deployed to Vercel |
-| [`glossary.md`](glossary.md) | Plain-language crypto + ROSCA terms |
 
 ## Architecture decision records (`docs/adr/`)
 
@@ -51,10 +52,35 @@ an archive is allowed to contain stale claims.
 | [`adr/001-upgradeability.md`](adr/001-upgradeability.md) | ADR 001: decision to keep the contract immutable and defer admin rotation |
 | [`adr/002-multi-round-turn-ordering.md`](adr/002-multi-round-turn-ordering.md) | ADR 002: multi-round turn ordering and cycle-scoped nullifier behavior |
 | [`adr/003-client-boundary.md`](adr/003-client-boundary.md) | ADR 003: app ↔ SDK ↔ contract boundary and the current free-function design |
-| [`adr/003-protocol-fees.md`](adr/003-protocol-fees.md) | ADR 003 (fees): protocol fee on claim |
 | [`adr/004-storage-archival.md`](adr/004-storage-archival.md) | ADR 004: per-key storage TTL/archival analysis, including the nullifier double-claim fence's residual risk |
 | [`adr/005-bls12-381-curve-choice.md`](adr/005-bls12-381-curve-choice.md) | ADR 005: BLS12-381 instead of BN254 (CPU budget) |
 | [`adr/006-recipient-binding.md`](adr/006-recipient-binding.md) | ADR 006: `recipientHash` public input for payout binding |
+| [`adr/007-leanimt-dynamic-depth-merkle-tree.md`](adr/007-leanimt-dynamic-depth-merkle-tree.md) | ADR 007: LeanIMT dynamic-depth Merkle tree |
+| [`adr/008-protocol-fees.md`](adr/008-protocol-fees.md) | ADR 008 (fees): protocol fee on claim |
+| [`adr/009-storage-migration.md`](adr/009-storage-migration.md) | ADR 009: schema versioning and storage migration |
+
+## Operations
+
+| File | Description |
+|---|---|
+| [`canary.md`](canary.md) | Running the e2e suite on a schedule on testnet; foreground-run constraint |
+| [`deployment.md`](deployment.md) | How the live browser demo is built and manually deployed to Vercel |
+| [`runbook-testnet-reset.md`](runbook-testnet-reset.md) | Runbook for quarterly testnet resets |
+| [`troubleshooting.md`](troubleshooting.md) | Common setup and proof-verification failures |
+
+## Reference
+
+| File | Description |
+|---|---|
+| [`errors.md`](errors.md) | The contract error-code ↔ SDK class table |
+| [`glossary.md`](glossary.md) | Plain-language crypto and ROSCA terms |
+| [`licenses.md`](licenses.md) | Third-party licence notes |
+
+## Planning
+
+| File | Description |
+|---|---|
+| [`roadmap.md`](roadmap.md) | Mainnet readiness checklist (no target dates) |
 
 ## Audit prep (`docs/audit/` — not an audit report)
 
@@ -96,5 +122,6 @@ an archive is allowed to contain stale claims.
 - **Historical verify checklist (archived):** [`hackathon/VERIFY.md`](hackathon/VERIFY.md)
 - **Building the circuit:** [`circuits/README.md`](../circuits/README.md)
 - **Building the contract:** [`contracts/README.md`](../contracts/README.md)
-- **Architecture decisions:** [`adr/001-upgradeability.md`](adr/001-upgradeability.md)
+- **Architecture decisions:** [`adr/001-upgradeability.md`](adr/001-upgradeability.md), [`adr/002-multi-round-turn-ordering.md`](adr/002-multi-round-turn-ordering.md), [`adr/003-client-boundary.md`](adr/003-client-boundary.md), [`adr/004-storage-archival.md`](adr/004-storage-archival.md), [`adr/005-bls12-381-curve-choice.md`](adr/005-bls12-381-curve-choice.md), [`adr/006-recipient-binding.md`](adr/006-recipient-binding.md), [`adr/007-leanimt-dynamic-depth-merkle-tree.md`](adr/007-leanimt-dynamic-depth-merkle-tree.md), [`adr/008-protocol-fees.md`](adr/008-protocol-fees.md), [`adr/009-storage-migration.md`](adr/009-storage-migration.md)
 - **Audit readiness (not audited):** [`audit/README.md`](audit/README.md)
+

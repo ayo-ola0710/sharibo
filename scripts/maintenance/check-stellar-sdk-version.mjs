@@ -28,7 +28,7 @@ export function checkSdkVersions(manifests) {
 }
 
 function main() {
-  const WORKSPACES = ["app", "packages/client", "scripts"];
+  const WORKSPACES = ["app", "packages/client", "packages/core", "scripts"];
   const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
 
   /** @type {Record<string, object>} */
@@ -48,7 +48,7 @@ function main() {
     console.error(`✗ ${DEP} version mismatch across workspaces:`);
     for (const [ws, range] of result.versions) console.error(`  ${ws}: ${range}`);
     console.error(
-      `All workspaces must declare the same version range. Bump ${DEP} in all three places at once.`,
+      `All workspaces must declare the same version range. Bump ${DEP} in all four places at once.`,
     );
     process.exit(1);
   }

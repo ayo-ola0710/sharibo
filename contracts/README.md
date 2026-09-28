@@ -2,15 +2,24 @@
 
 This directory contains the Soroban smart contracts for **Sharibo**, private rotating savings circles on Stellar. The payout of the shared pot is anonymized by a real Groth16 zero-knowledge proof, verified on-chain.
 
-| Method          | Kind  | Purpose                                                            |
-| --------------- | ----- | ------------------------------------------------------------------ |
-| `create_circle` | write | Admin creates a circle (Merkle root, contribution, size, vk, fee).  |
-| `fund`          | write | Deposit one `contribution` into the current round's pot.           |
-| `claim`         | write | Pay the pot (minus protocol fee) to `recipient` given a valid proof.|
-| `get_circle`    | view  | Read circle state.                                                 |
-| `has_claimed`   | view  | Whether a nullifier has already been used in this circle.          |
+## §Entrypoints
 
----
+| Method | Kind | Auth Requirement | Errors | Purpose |
+| --- | --- | --- | --- | --- |
+| `create_circle` | write | admin | 9, 10, 11 | Admin creates a circle (Merkle root, contribution, size, vk, fee). |
+| `fund` | write | from | 1, 6, 7, 8, 12 | Deposit one `contribution` into the current round's pot. |
+| `claim` | write | none (ZK proof) | 1, 2, 3, 4, 5, 8, 11 | Pay the pot to `recipient` given a valid proof. |
+| `get_circle` | view | none | 1 | Read circle state. |
+| `get_circle_count` | view | none | - | Count of circles created. |
+| `get_round` | view | none | 1 | Get current round for a circle. |
+| `get_pot` | view | none | 1 | Get current pot balance. |
+| `get_status` | view | none | 1, 7 | Compact status tuple (round, pot, target, cancelled). |
+| `get_contributors` | view | none | 1 | Addresses that funded the current round. |
+| `has_claimed` | view | none | - | Whether a nullifier has already been used. |
+| `propose_admin` | write | admin | 1, 8 | Nominate a new admin. |
+| `accept_admin` | write | new_admin (from)| 1, 8 | Accept admin nomination. |
+| `expire_round` | write | permissionless-after-deadline | 1, 6, 8, 11, 12 | Refund current-round contributors if deadline passed. |
+| `cancel_circle` | write | admin | 1, 8, 11 | Cancel circle and refund current-round contributors. |
 
 `fund(circle_id, from)` requires only `from.require_auth()` — **any address may fund any circle**. The Merkle tree constrains who may _claim_, not who may _fund_.
 
@@ -18,10 +27,13 @@ Before compiling the contracts, ensure you have the proper Rust toolchain instal
 
 ### Prerequisites
 
-- **Rust + WASM target**:
+- **Rust toolchain**: A Rust channel will eventually be pinned (see `rust-toolchain`).
+- **Soroban SDK**: Version 23.
+- **WASM target**:
   ```bash
   rustup target add wasm32v1-none
   ```
+  *(Note: using `wasm32-unknown-unknown` instead of `wasm32v1-none` is a common trap and will fail; see `docs/troubleshooting.md`)*
 - **Stellar CLI**: Ensure you have installed the current `stellar` CLI (superseding the old `soroban` CLI).
 
 ### Build Command
@@ -34,15 +46,13 @@ stellar contract build
 
 The compiled WASM artifact will be generated at `target/wasm32v1-none/release/sharibo.wasm`.
 
+### Code Generation, Benchmarks, and Formatting
+
+- **`just xdr-goldens`**: Regenerates the expected XDR layout snapshots (e.g. for the structure-test suite). A contributor whose PR produces a snapshot diff for these should run this and commit the updated snapshots, which is expected when modifying state like the `Circle` struct.
+- **`just bench-contract`**: Regenerates CPU instruction benchmarks. Run this and commit the updated snapshots if your changes affect the CPU cost of entrypoints.
+- **`cargo fmt` & `cargo clippy`**: Running these locally is highly recommended for style consistency, though neither is strictly enforced in CI currently (see issue #534).
+
 ---
-
-1. Iterates `circle.contributors` (addresses that funded the _current_ round, stored in insertion order) and transfers `contribution` back to each funder.
-2. Sets `circle.cancelled = true` and clears `circle.pot` and `contributors`.
-3. Permanently closes the circle: subsequent `fund` and `claim` calls revert with `Error::CircleCancelled`.
-
-**Privacy note**: contributor addresses are already public (funding is unshielded). Storing and iterating them for refunds imposes no additional privacy loss _today_. However it constrains a future shielded-funding design, which would need to avoid recording funder addresses on-chain — see issue #82.
-
-To execute the test suite, run the following command from the `contracts/` directory:
 
 ## Storage lifetime
 
@@ -72,6 +82,10 @@ After a successful `RestoreFootprintOp` the circle's full state (including `roun
 
 **What happens on testnet when instance storage is archived and restored?** After a successful `RestoreFootprintOp` the entry reappears with its last-written value intact — the counter does _not_ reset. The risk is the gap between archival and restoration: any `create_circle` call during that gap would reinitialise the counter to `0` (the `unwrap_or(0)` default), silently overwriting circle 0.
 **Storage archival:** every entry the contract writes — instance (`NextCircleId`) and persistent (`Circle`, `Nullifier`) — has its own TTL-extension and archival-consequence analysis, including the `NextCircleId` reset-to-zero risk and the more sensitive nullifier double-claim fence. See [`docs/adr/004-storage-archival.md`](../docs/adr/004-storage-archival.md).
+
+## Schema Version
+
+The `Circle` state uses a versioned layout. The current version is **2** (which introduced `fee_bps` and `fee_recipient`). Since this layout change breaks compatibility with pre-existing persistent state on testnet, deploying it requires a testnet reset (see `docs/runbook-testnet-reset.md`). Future field additions must bump this version number and similarly handle migrations or resets.
 
 ---
 
@@ -109,11 +123,11 @@ cannot change without shipping a new WASM build:
 
 ---
 
-## 3. Deploying the Contracts
+## 3. Deploying and Invoking
 
 ### Required CLI
 
-Deployments are performed using the `stellar` CLI.
+Deployments and invocations are performed using the `stellar` CLI.
 
 ### Deployment Commands
 
@@ -130,6 +144,29 @@ Deployments are performed using the `stellar` CLI.
    ```bash
    stellar contract id asset --asset native --network testnet
    ```
+
+### Invocation Example
+
+Creating a circle requires providing exactly **9 arguments** matching the `create_circle` signature (excluding `env` which is injected by the host):
+
+```bash
+stellar contract invoke \
+  --id <contract-id> \
+  --source admin \
+  --network testnet \
+  -- \
+  create_circle \
+  --admin <admin-address> \
+  --token <token-address> \
+  --root <32-byte-hex-root> \
+  --contribution 10000000 \
+  --size 5 \
+  --round_deadline_ledgers 0 \
+  --vk '{"alpha":..., "beta":..., "gamma":..., "delta":..., "ic":...}' \
+  --fee_bps 0 \
+  --fee_recipient <admin-address>
+```
+*Note: Supplying incorrect arguments (e.g. omitting the new `fee_bps` and `fee_recipient`) results in a Soroban arity error that reads like a toolchain problem, but is simply a parameter mismatch.*
 
 ---
 
@@ -154,7 +191,7 @@ Below is the documentation for all public contract methods.
       fee_recipient: Address,
   ) -> u64
   ```
-  (See [`docs/adr/003-protocol-fees.md`](../docs/adr/003-protocol-fees.md) for
+  (See [`docs/adr/008-protocol-fees.md`](../docs/adr/008-protocol-fees.md) for
   the fee design.)
 
 * **Purpose**:
@@ -256,19 +293,9 @@ The `claim` event deliberately omits the nullifier hash: publishing it would giv
 
 ## 5. Error Code Reference
 
-When a transaction reverts, Soroban returns a typed contract error of the form `Error(Contract, #Code)`. The canonical mapping — covering all eight current codes with SDK class, user-facing message, likely cause, and remedy — is in **[`docs/errors.md`](../docs/errors.md)**.
+When a transaction reverts, Soroban returns a typed contract error of the form `Error(Contract, #Code)`.
 
-| Code | Error Name | Trigger / Cause | What the Caller Should Do |
-| :---: | :--- | :--- | :--- |
-| **1** | `CircleNotFound` | The specified `circle_id` does not exist in persistent storage. | Verify that the circle ID is correct and was successfully created. |
-| **2** | `RoundNotFunded` | `claim` was called on a circle whose pot has not yet reached the required target size (`contribution * size`). | Ensure that the required number of contributors have successfully called `fund` for this round. |
-| **3** | `WrongRoundTag` | The presented `external_nullifier` does not match the expected SHA-256 round tag (`SHA256(circle_id, round) mod r`) of the current round. | Re-generate the proof with the correct round tag matching the circle's current round number. |
-| **4** | `AlreadyClaimed` | The `nullifier_hash` presented in `claim` has already been recorded in persistent storage as claimed. | Do not attempt to reuse a spent nullifier. Each member may only claim once per circle/round. |
-| **5** | `InvalidProof` | The Groth16 pairing check failed, or the public signal order/values did not match the proof statement. | Verify that the zero-knowledge proof was correctly generated, utilizing the correct secret, nullifier, path elements, and verification key. |
-| **6** | `RoundFull` | `fund` was called on a circle whose pot is already fully funded. | Wait for the current round to be claimed and advanced before attempting to fund the next round. |
-| **7** | `Overflow` | Checked arithmetic failed during contribution calculation or pot addition. | Avoid using absurdly large contribution amounts or circle sizes that overflow integer capacities. |
-| **8** | `CircleCancelled` | `fund`, `claim`, or `cancel_circle` was called on a circle that has already been cancelled. | Do not interact with a cancelled circle. Any funds were already refunded to the contributors. |
-| **9** | `InvalidCircleParams` | `create_circle` was given a zero size, a non-positive contribution, an invalid verification key length, or a creation-time overflow in `contribution * size`. | Correct the circle configuration before submitting the transaction. |
+**For the full, canonical mapping of error codes (1–12) to SDK classes, user-facing messages, and remedies, see [`docs/errors.md`](../docs/errors.md)**.
 
 ---
 
@@ -322,7 +349,6 @@ If a circle's persistent entry (or any Nullifier) is not written to for 29+ days
 4. **State Preservation**: Upon restoration, the entry reappears with its last-written value intact (round number, pot, contributors, etc. are preserved).
 
 See the [Soroban Documentation](https://developers.stellar.org/) for "Temporary State" and "State Archival" (Soroban 23.0+).
-  - `cpu_instruction_benchmarks`: Benchmarks and prints the precise CPU instructions consumed by write operations (e.g., `create_circle`, `fund`, `claim`) and asserts that they remain safely under the 100M limit.
 
 ### Running Coverage (LLVM / Rust)
 

@@ -56,7 +56,7 @@ Running log of decisions, deviations from the build spec, and `// DEMO MOCK:` it
 
 ## Phase 2 results
 
-> **Superseded (pre-fee `claim`):** Protocol fees and post-fee payout semantics are documented in [docs/adr/003-protocol-fees.md](docs/adr/003-protocol-fees.md) (#252). The Phase 2 narrative below describes the original fee-free claim path.
+> **Superseded (pre-fee `claim`):** Protocol fees and post-fee payout semantics are documented in [docs/adr/008-protocol-fees.md](docs/adr/008-protocol-fees.md) (#252). The Phase 2 narrative below describes the original fee-free claim path.
 
 - `contracts/sharibo/src/lib.rs`: `Circle` storage (`admin, token, root, contribution, size, round, pot, vk`), `create_circle`/`fund`/`claim`/`get_circle`, nullifier double-spend map keyed by `(circle_id, nullifier_hash)` exactly as spec'd. Check order in `claim` matches §10 exactly: pot-funded -> round-tag -> nullifier-unused -> proof-valid -> effects.
 - Two `// DEMO MOCK:` stubs, both under a single clearly-marked `PHASE 2 STUBS` block with `TODO(phase-3)`:

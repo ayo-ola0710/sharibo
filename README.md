@@ -354,7 +354,7 @@ Full annotated version (what each file does and why): [breakdown §16](full_prod
 
 We welcome contributions to Sharibo! See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow, how to run the test suites, and the dependency audit runbook. Please ensure you have read and adhere to our [Code of Conduct](CODE_OF_CONDUCT.md) when participating in this project. If terms like *Groth16* or *Merkle root* are new to you, start with the [glossary](docs/glossary.md).
 
-`@stellar/stellar-sdk` is declared independently in `app`, `packages/client`, and `scripts`, and pinned to a single resolved version via a root `overrides` entry. **Bump `stellar-sdk` in all three places at once** — `npm run check:stellar-sdk` (also run automatically on `npm install`) fails the build if the declared ranges ever drift apart.
+`@stellar/stellar-sdk` is declared independently in `app`, `packages/client`, `packages/core`, and `scripts`, and pinned to a single resolved version via a root `overrides` entry. **Bump `stellar-sdk` in all four places at once** — `npm run check:stellar-sdk` (also run automatically on `npm install`) fails the build if the declared versions ever drift apart.
 
 ## Roadmap
 

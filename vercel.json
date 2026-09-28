@@ -1,4 +1,7 @@
 {
+  // Disable automatic Vercel deployments on push since the build requires
+  // the circom toolchain (unavailable on Vercel) to generate circuit artifacts.
+  // The app is built locally and manually uploaded via the Vercel CLI.
   "git": {
     "deploymentEnabled": false
   }

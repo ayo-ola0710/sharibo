@@ -45,7 +45,7 @@
     "mutate": "stryker run stryker.conf.json"
   },
   "dependencies": {
-    "@stellar/stellar-sdk": "^16.2.0",
+    "@stellar/stellar-sdk": "16.2.0",
     "poseidon-bls12381": "1.0.2",
     "snarkjs": "0.7.6"
   },

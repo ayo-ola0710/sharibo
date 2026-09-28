@@ -88,7 +88,7 @@ verify:
     echo "Running verify from $root"; \
     cd "$root"; \
     set -o pipefail; \
-    s_type=0; s_eslint=0; s_deadcode=0; s_tests=0; s_cargo=0; \
+    s_type=0; s_eslint=0; s_deadcode=0; s_tests=0; s_cargo=0; s_sdk=0; \
 
     echo "\n== 1) TypeScript typecheck (packages/client + app if present) =="; \
     npm run -s typecheck --workspace=packages/client || s_type=1; \
@@ -96,6 +96,9 @@ verify:
 
     echo "\n== 2) ESLint =="; \
     npx -y eslint . --ext .js,.ts,.tsx || s_eslint=1; \
+
+    echo "\n== 2.5) Stellar SDK version sync =="; \
+    npm run -s check:stellar-sdk || s_sdk=1; \
 
     echo "\n== 3) Dead-code check (ts-prune; best-effort) =="; \
     npx -y ts-prune --summary || s_deadcode=1; \
@@ -115,8 +118,9 @@ verify:
     printf "%-36s %s\n" "Dead-code (ts-prune)" "$( [ $s_deadcode -eq 0 ] && echo PASS || echo WARN )"; \
     printf "%-36s %s\n" "Unit tests (app + client)" "$( [ $s_tests -eq 0 ] && echo PASS || echo FAIL )"; \
     printf "%-36s %s\n" "Cargo tests + clippy" "$( [ $s_cargo -eq 0 ] && echo PASS || echo FAIL )"; \
+    printf "%-36s %s\n" "Stellar SDK sync" "$( [ $s_sdk -eq 0 ] && echo PASS || echo FAIL )"; \
 
-    if [ $s_type -eq 0 -a $s_eslint -eq 0 -a $s_tests -eq 0 -a $s_cargo -eq 0 ]; then \
+    if [ $s_type -eq 0 -a $s_eslint -eq 0 -a $s_tests -eq 0 -a $s_cargo -eq 0 -a $s_sdk -eq 0 ]; then \
         echo "\nverify: All checks passed."; \
     else \
         echo "\nverify: Some checks failed. See above for details."; \
@@ -192,8 +196,9 @@ test:
 all: circuits contract test
     @echo 'All recipes completed (e2e skipped — uses testnet funds/friendbot quota)'
 
-# Verify: run lint and client checks
+# Verify: run lint, client checks, and sdk sync
 verify: client
+    npm run check:stellar-sdk
     npm run lint
 
 # Run coverage for all workspaces and print a short per-workspace summary.
