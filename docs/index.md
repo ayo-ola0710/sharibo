@@ -15,6 +15,7 @@ each covers and where to find it.
 | [`CODE_OF_CONDUCT.md`](../CODE_OF_CONDUCT.md) | Contributor code of conduct |
 | [`CONTRIBUTING.md`](../CONTRIBUTING.md) | Development workflow, test suites, and dependency audit runbook |
 | [`LICENSE`](../LICENSE) | Project license |
+| [`CHANGELOG.md`](../CHANGELOG.md) | Keep-a-Changelog release history (see Releases in CONTRIBUTING) |
 
 ## Hackathon-era artifacts (`docs/hackathon/` — point-in-time archive, not maintained)
 
@@ -65,6 +66,7 @@ an archive is allowed to contain stale claims.
 |---|---|
 | [`canary.md`](canary.md) | Running the e2e suite on a schedule on testnet; foreground-run constraint |
 | [`deployment.md`](deployment.md) | How the live browser demo is built and manually deployed to Vercel |
+| [`deployments.md`](deployments.md) | Browser demo deploys plus releases and the Deployments table (tag -> contract ID -> schema -> vk hash) |
 | [`runbook-testnet-reset.md`](runbook-testnet-reset.md) | Runbook for quarterly testnet resets |
 | [`troubleshooting.md`](troubleshooting.md) | Common setup and proof-verification failures |
 
@@ -73,14 +75,23 @@ an archive is allowed to contain stale claims.
 | File | Description |
 |---|---|
 | [`errors.md`](errors.md) | The contract error-code ↔ SDK class table |
+| [`events.md`](events.md) | Typed event schema: all seven `#[contractevent]` structs, topics, data fields, and lifecycle |
 | [`glossary.md`](glossary.md) | Plain-language crypto and ROSCA terms |
 | [`licenses.md`](licenses.md) | Third-party licence notes |
+| [`dependencies.md`](dependencies.md) | Project dependency manifest |
 
 ## Planning
 
 | File | Description |
 |---|---|
-| [`roadmap.md`](roadmap.md) | Mainnet readiness checklist (no target dates) |
+| [`mainnet-readiness.md`](mainnet-readiness.md) | Mainnet readiness checklist (no target dates) |
+| [`refactor-backlog.md`](refactor-backlog.md) | Dependency-ordered reading order for the refactor and hardening backlog (issues #455–#579) |
+
+## Verifiability
+
+| File | Description |
+|---|---|
+| [`judges/VERIFY.md`](../judges/VERIFY.md) | One-minute verification guide: confirm the on-chain proof is real without installing anything |
 
 ## Audit prep (`docs/audit/` — not an audit report)
 
@@ -89,6 +100,12 @@ an archive is allowed to contain stale claims.
 | [`audit/README.md`](audit/README.md) | Audit package index: toolchain pins, repro steps, scope links (#547) |
 | [`audit/SCOPE.md`](audit/SCOPE.md) | Draft engagement scope for circuit, setup, contract, client |
 | [`audit/NEGATIVE_TESTS.md`](audit/NEGATIVE_TESTS.md) | Existing negative tests and known gaps |
+
+## Cross-implementation specification
+
+| File | Description |
+|---|---|
+| [`wire-format.md`](wire-format.md) | Authoritative wire-format spec: public signal order, external nullifier derivation, G1/G2 encoding, vk.ic length rules — validated by `test-vectors/wire-format.json` |
 
 ## Circuit docs
 
@@ -119,9 +136,9 @@ an archive is allowed to contain stale claims.
 - **Historical build narrative:** [`NOTES.md`](../NOTES.md)
 - **Wire format / public signals:** [`wire-format.md`](wire-format.md)
 - **Deep technical dive:** [`full_product_breakdown.md`](../full_product_breakdown.md)
+- **Verifying the on-chain proof:** [`judges/VERIFY.md`](../judges/VERIFY.md)
 - **Historical verify checklist (archived):** [`hackathon/VERIFY.md`](hackathon/VERIFY.md)
 - **Building the circuit:** [`circuits/README.md`](../circuits/README.md)
 - **Building the contract:** [`contracts/README.md`](../contracts/README.md)
 - **Architecture decisions:** [`adr/001-upgradeability.md`](adr/001-upgradeability.md), [`adr/002-multi-round-turn-ordering.md`](adr/002-multi-round-turn-ordering.md), [`adr/003-client-boundary.md`](adr/003-client-boundary.md), [`adr/004-storage-archival.md`](adr/004-storage-archival.md), [`adr/005-bls12-381-curve-choice.md`](adr/005-bls12-381-curve-choice.md), [`adr/006-recipient-binding.md`](adr/006-recipient-binding.md), [`adr/007-leanimt-dynamic-depth-merkle-tree.md`](adr/007-leanimt-dynamic-depth-merkle-tree.md), [`adr/008-protocol-fees.md`](adr/008-protocol-fees.md), [`adr/009-storage-migration.md`](adr/009-storage-migration.md)
 - **Audit readiness (not audited):** [`audit/README.md`](audit/README.md)
-

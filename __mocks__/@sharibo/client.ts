@@ -29,7 +29,10 @@ import type {
   TxResult,
   CircleView,
   MerkleProof,
+  CircleId,
+  NullifierHash,
 } from "@sharibo/client";
+import { makeCircleId } from "@sharibo/client";
 
 export const TREE_LEVELS = 4;
 export const MAX_CIRCLE_SIZE = 2 ** TREE_LEVELS;
@@ -164,6 +167,8 @@ export const generateProof = vi.fn(async () => ({
 
 export const verifyProofLocally = vi.fn(async (): Promise<number> => 1);
 
+export const setArtifactOnEvent = vi.fn();
+
 export const estimateClaimFee = vi.fn(
   async (): Promise<import("@sharibo/client").FeeEstimate | null> => ({
     minResourceFee: 500_000n,
@@ -181,8 +186,8 @@ export const connect = vi.fn(
 );
 
 export const createCircle = vi.fn(
-  async (_client: ShariboClient, _args: unknown): Promise<TxResult<bigint>> => ({
-    result: 37n,
+  async (_client: ShariboClient, _args: unknown): Promise<TxResult<CircleId>> => ({
+    result: makeCircleId(37n),
     hash: "mockCreateHash",
   }),
 );
@@ -202,7 +207,7 @@ export const claim = vi.fn(
 );
 
 export const getCircle = vi.fn(
-  async (_client: ShariboClient, _circleId: bigint): Promise<CircleView> => ({
+  async (_client: ShariboClient, _circleId: CircleId): Promise<CircleView> => ({
     admin: "MOCK_ADMIN",
     token: "MOCK_TOKEN",
     root: 12345n,
@@ -210,17 +215,19 @@ export const getCircle = vi.fn(
     size: 5,
     round: 0,
     pot: 0n,
-    vk: {
-      alpha: new Uint8Array(96),
-      beta: new Uint8Array(192),
-      gamma: new Uint8Array(192),
-      delta: new Uint8Array(192),
-      ic: [],
-    },
-    contributors: [],
     cancelled: false,
     fee_bps: 0,
     fee_recipient: "MOCK_FEE_RECIPIENT",
+  }),
+);
+
+export const getVk = vi.fn(
+  async (_client: ShariboClient, _circleId: bigint): Promise<ContractVerificationKey> => ({
+    alpha: new Uint8Array(96),
+    beta: new Uint8Array(192),
+    gamma: new Uint8Array(192),
+    delta: new Uint8Array(192),
+    ic: [new Uint8Array(96), new Uint8Array(96), new Uint8Array(96), new Uint8Array(96)],
   }),
 );
 
@@ -234,7 +241,7 @@ export const cancelCircle = vi.fn(
 export const getCircleCount = vi.fn(async (): Promise<bigint> => 1n);
 
 export const hasClaimed = vi.fn(
-  async (_client: ShariboClient, _circleId: bigint, _nullifierHash: bigint): Promise<boolean> =>
+  async (_client: ShariboClient, _circleId: CircleId, _nullifierHash: NullifierHash): Promise<boolean> =>
     false,
 );
 
@@ -278,7 +285,7 @@ export class ShariboSDK {
     return new ShariboSDK(config, keypairOrSigner, publicKey);
   }
 
-  createCircle(args: unknown): Promise<TxResult<bigint>> {
+  createCircle(args: unknown): Promise<TxResult<CircleId>> {
     return createCircle(this.client, args);
   }
 
@@ -290,7 +297,7 @@ export class ShariboSDK {
     return claim(this.client, args);
   }
 
-  getCircle(circleId: bigint): Promise<CircleView> {
+  getCircle(circleId: CircleId): Promise<CircleView> {
     return getCircle(this.client, circleId);
   }
 
@@ -302,7 +309,7 @@ export class ShariboSDK {
     return this.getCircleCount();
   }
 
-  hasClaimed(circleId: bigint, nullifierHash: bigint): Promise<boolean> {
+  hasClaimed(circleId: CircleId, nullifierHash: NullifierHash): Promise<boolean> {
     return hasClaimed(this.client, circleId, nullifierHash);
   }
 }
@@ -327,8 +334,42 @@ export {
 } from "../../packages/client/src/errors.js";
 
 export { networkOf, NETWORKS } from "../../packages/client/src/networks.js";
-export { makeCircleId } from "../../packages/client/src/brand.js";
-export type { CircleId } from "../../packages/client/src/brand.js";
+export { makeCircleId, makeNullifierHash, makeExternalNullifier } from "../../packages/client/src/brand.js";
+export type { CircleId, NullifierHash, ExternalNullifier } from "../../packages/client/src/brand.js";
+
+// ── Artifact prefetch / event plumbing ───────────────────────────────────────
+//
+// The app subscribes to these on mount (useSdkEvents calls setArtifactOnEvent,
+// ArtifactProgress calls subscribeToArtifactPrefetch). Without them in the
+// manual mock the whole @sharibo/client module throws on first use and App.tsx
+// fails to load at all — the reason the app suite could not collect a single
+// App test. Signatures mirror packages/client/src/{artifacts,prove}.ts.
+import type { ArtifactPrefetchProgress } from "../../packages/client/src/artifacts.js";
+
+const IDLE_PREFETCH: ArtifactPrefetchProgress = {
+  status: "idle",
+  loaded: 0,
+  total: null,
+  fraction: null,
+};
+
+export const configureArtifacts = vi.fn((_config: unknown): void => {});
+
+export const setArtifactOnEvent = vi.fn((_onEvent?: unknown): void => {});
+
+export const getArtifactPrefetchProgress = vi.fn((): ArtifactPrefetchProgress => IDLE_PREFETCH);
+
+export const subscribeToArtifactPrefetch = vi.fn(
+  (listener: (progress: ArtifactPrefetchProgress) => void): (() => void) => {
+    listener(IDLE_PREFETCH);
+    return () => {};
+  },
+);
+
+export const prefetchMembershipArtifacts = vi.fn(async (): Promise<unknown> => ({}));
+
+/** Resolves immediately with empty artifact paths — no wasm/zkey in unit tests. */
+export const getArtifacts = vi.fn(async (_signal?: AbortSignal): Promise<unknown> => ({}));
 
 /** Read-only client stub — the UI only ever passes it back into other stubs. */
 export async function connectReadOnly(_config: unknown): Promise<unknown> {
